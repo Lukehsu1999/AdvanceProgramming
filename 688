@@ -1,0 +1,133 @@
+#include<iostream>
+#include<queue>
+#include<vector>
+#include<string>
+
+using namespace std;
+
+typedef pair<int, int> block; //r,c
+
+int mv[8][2] = { {-2,-1},{-2,1},{-1,-2},{1,-2},{2,-1},{2,1},{1,2},{-1,2} };
+
+bool bk_valid(block b, int R, int C) {
+	if (b.first < 0 || b.second < 0 || b.first >= R || b.second >= C) {
+		return false;
+	}
+	return true;
+}
+
+void clear(queue<block>& q)
+{
+	queue<block> empty;
+	swap(q, empty);
+}
+
+int main() {
+	int t_case;
+	cin >> t_case;
+	string none;
+	getline(cin, none);
+	int case_id = 1;
+	while (t_case--) {
+
+		//PART 1: INPUT
+		string input;
+		vector<string>input_board;
+		if (t_case != 0) {
+			while (getline(cin,input)) {
+				if (input.compare("")==0) {
+					break;
+				}
+				input_board.push_back(input);
+			}
+		}
+		else {
+			while (getline(cin,input)) {
+				input_board.push_back(input);
+			}
+		}
+		
+		//PART 2: FORM chessboard
+		int C, R;
+		block start;
+		block end;
+		R = input_board.size();
+		C = input_board[0].length();
+		char** board;
+		int** step_bd;
+		step_bd = new int* [R];
+		board = new char* [R];
+		for (int i = 0; i < R; i++) {
+			board[i] = new char[C];
+			step_bd[i] = new int[C];
+		}
+		for (int r = 0; r < R; r++) {
+			for (unsigned c = 0; c < C; c++) {
+				board[r][c] = input_board[r][c];
+				step_bd[r][c] = -1;
+				if (board[r][c] == '#') {
+					start.first = r;
+					start.second = c;
+				}
+				else if (board[r][c] == '@') {
+					end.first = r;
+					end.second = c;
+				}
+			}
+		}
+
+		//PART 3: BFS
+		queue<block>que;
+		step_bd[start.first][start.second] = 0;
+		que.push(start);
+		while (!que.empty()) {
+			block cur=que.front();
+			int cur_step = step_bd[cur.first][cur.second];
+			que.pop();
+			for (int i = 0; i < 8; i++) {
+				block nxt;
+				nxt.first = cur.first + mv[i][0];
+				nxt.second = cur.second + mv[i][1];
+				if (bk_valid(nxt, R, C)) {
+					if (board[nxt.first][nxt.second] == '*') {
+						continue;
+					}
+					else if (board[nxt.first][nxt.second] == '-') {
+						step_bd[nxt.first][nxt.second] = cur_step + 1;
+						//mark as visited
+						board[nxt.first][nxt.second] = '*';
+						que.push(nxt);
+					}
+					else if (board[nxt.first][nxt.second] == '@') {
+						step_bd[nxt.first][nxt.second] = cur_step + 1;
+						cout << "Case "<<case_id<<": "<<cur_step + 1 << endl;
+						goto outside;
+					}
+				}
+			}
+
+		}
+	outside:
+		/*
+		for (int r = 0; r < R; r++) {
+			for (unsigned c = 0; c < C; c++) {
+				cout << board[r][c] << " ";
+			}
+			cout << endl;
+		}
+		for (int r = 0; r < R; r++) {
+			for (unsigned c = 0; c < C; c++) {
+				cout << step_bd[r][c] << " ";
+			}
+			cout << endl;
+		}
+		*/
+		if (step_bd[end.first][end.second] == -1) {
+			cout << "Case " << case_id << ": " "IMPOSSIBLE" << endl;
+		}
+		clear(que);
+		delete[] board;
+		input_board.clear();
+		case_id++;
+	}
+}
