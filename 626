@@ -1,0 +1,106 @@
+#include<iostream>
+#include<algorithm>
+#include<cmath>
+#include<map>
+
+using namespace std;
+typedef pair<long long int, long long int> state;
+map<state, long long int>my_map;
+long long int goal, base;
+/*
+base = b
+a[m]: the ways to represent m as the sum of powers of b
+state[m,k]: the ways to represent m as the sum of powers of b,
+			while the largest number can only be b^k or b^(<k)
+			
+state[m,k]=state[m-pow(b,k),k]+state[m,k-1]
+exp: (use at leat one b^k) and (use no b^k) will have no overlap
+*/
+
+long long int get_highest_pow(int base, int goal) {
+	int ans = 0;
+	long long int cur = 1;
+	while (cur < goal) {
+		cur *= base;
+		ans++;
+	}
+	if (ans == 0) {
+		return ans;
+	}
+	else {
+		return ans - 1;
+	}
+}
+
+long long int solve(state cur) {
+	if (my_map.find(cur) != my_map.end()) {
+		return my_map[cur];
+	}
+	else if (cur.first == 0) {
+		my_map[cur] = 1;
+		return 1;
+	}
+	else if (cur.second == 0) {
+		my_map[cur] = 1;
+		return 1;
+	}
+	else if (cur.first < 0 || cur.second < 0) {
+		return 0;
+	}
+	else {
+		state use_k_state;
+		use_k_state.first = cur.first - pow(base, cur.second);
+		use_k_state.second = cur.second;
+		state dont_use_state;
+		dont_use_state.first = cur.first;
+		dont_use_state.second = cur.second - 1;
+		return (solve(use_k_state) + solve(dont_use_state))% 1000000007;
+	}
+}
+
+
+int main() {
+	
+	while (cin >> goal >> base) {
+		int h_pow = get_highest_pow(base, goal);
+
+		//PART 1: Initialize my_map
+		my_map.clear();
+
+		//PART 2:
+		
+
+		//PART 3:
+		long long int i;
+		for (i = 0; i <= goal; i+=base) {
+			for (long long int p = 0; p <=h_pow; p++) {
+				state cur;
+				cur.first = i;
+				cur.second = p;
+				if (i == 0) {
+					my_map[cur] = 1;
+				}
+				else if (p == 0) {
+					my_map[cur] = 1;
+				}
+				else if (i < 0 || p < 0) {
+					my_map[cur] = 0;
+				}
+				else {
+					state use_s;
+					use_s.first = cur.first - pow(base, p);
+					use_s.second = cur.second;
+					state duse_s;
+					duse_s.first = cur.first;
+					duse_s.second = cur.second-1;
+					my_map[cur] = my_map[use_s] + my_map[duse_s];
+				}
+			}
+		}
+
+		state problem;
+		problem.first = i-base;
+		problem.second = h_pow;
+		cout << my_map[problem] << endl;
+	}
+}
