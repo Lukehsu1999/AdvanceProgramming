@@ -1,0 +1,104 @@
+#include<iostream>
+#include<algorithm>
+
+using namespace std;
+
+struct point {
+	int x;
+	int y;
+	void setpoint(int n, int m) {
+		x = n;
+		y = m;
+	}
+	bool same(point A) {
+		return (A.x == x) && (A.y == y);
+	}
+};
+struct vec {
+	int x_v;
+	int y_v;
+	vec(point A, point B) {
+		x_v = B.x - A.x;
+		y_v = B.y - A.y;
+	}
+};
+
+//global function
+int cross_product(vec A, vec B);
+int dot_product(vec A, vec B);
+bool withinlinesegment(point A, point B, point P); //check whether P is within AB, P not A or B
+bool inTriangle(point A, point B, point C, point P);
+
+//global variable
+int num_p_poly;
+int num_p_test;
+point poly[100009];
+int main() {
+	while (cin >> num_p_poly) {
+		for (int i = 0; i < num_p_poly; i++) {
+			int tx, ty;
+			cin >> tx >> ty;
+			poly[i].x = tx;
+			poly[i].y = ty;
+		}
+		cin >> num_p_test;
+		for (int t = 0; t < num_p_test; t++) {
+			int targetx, targety;
+			cin >> targetx >> targety;
+			point target;
+			target.x = targetx;
+			target.y = targety;
+			bool outside = true;
+			for (int i = 0; i < num_p_poly; i++) {
+				for (int j = i+1; j < num_p_poly; j++) {
+					for (int k = j+1; k < num_p_poly; k++) {
+						if (inTriangle(poly[i], poly[j], poly[k], target)) {
+							outside = false;
+							goto out;
+						}
+					}
+				}
+			}
+		out:
+			if (outside == false) {
+				cout << "inside" << endl;
+			}
+			else {
+				cout << "outside" << endl;
+			}
+		}
+	}
+}
+
+int cross_product(vec A, vec B) {
+	return A.x_v * B.y_v - A.y_v * B.x_v;
+}
+int dot_product(vec A, vec B) { //note if A=B, the dot product will be the square of A's magnitude
+	return A.x_v * B.x_v + A.y_v * B.y_v;
+}
+bool withinlinesegment(point A, point B, point P) {
+	vec BA = vec(B, A);
+	vec PA = vec(P, A);
+	if (cross_product(BA, PA) == 0) { //align
+		if (dot_product(BA, PA) > 0 && dot_product(BA, PA) < dot_product(BA, BA)) { //P within AB
+			return true;
+		}
+	}
+	return false;
+}
+
+bool inTriangle(point A, point B, point C, point P) {
+	vec AB(A, B);
+	vec AP(A, P);
+	vec BC(B, C);
+	vec BP(B, P);
+	vec CA(C, A);
+	vec CP(C, P);
+	int res1 = cross_product(AB, AP);
+	int res2 = cross_product(BC, BP);
+	int res3 = cross_product(CA, CP);
+	bool has_neg = (res1 < 0) || (res2 < 0) || (res3 < 0);
+	bool has_pos = (res1 > 0) || (res2 > 0) || (res3 > 0);
+	
+	return !(has_neg && has_pos);
+}
