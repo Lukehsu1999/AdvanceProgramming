@@ -1,0 +1,71 @@
+#include<iostream>
+#include<vector>
+#include<string>
+using namespace std;
+
+int mv[2][6][2] = { { {-1,-1},{0,-1},{1,-1},{-1,0},{1,0},{0,1} } ,{ {0,-1},{-1,0},{1,0},{-1,1},{0,1},{1,1} } };
+
+int get_length(vector<string>kingdom);
+bool is_valid(int R, int C, int r, int c);
+
+int main() {
+	string input;
+	vector<string>kingdom;
+	while (getline(cin, input)) {
+		if (input == "") {
+			cout << get_length(kingdom) << endl;
+			kingdom.clear();
+		}
+		else {
+			kingdom.push_back(input);
+		}
+		
+	}
+}
+int get_length(vector<string>kingdom) {
+
+	// declare
+	int C, R;
+	R = kingdom.size();
+	C = kingdom[0].length();
+	char** chart;
+	chart = new char* [R];
+	for (int i = 0; i < R; i++) {
+		chart[i] = new char[C];
+	}
+	int beach_length = 0;
+
+	// fill-in
+	for (int r = 0; r < R;r++) {
+		for (unsigned c = 0; c < C; c++) {
+			chart[r][c] = kingdom[r][c];
+		}
+	}
+	for (int r = 0; r < R; r++) {
+		for (int c = 0; c < C; c++) {
+			if (chart[r][c] == '#') {
+				int next_r, next_c;
+				for (int i = 0; i < 6; i++) {
+					next_r = r + mv[r % 2][i][0];
+					next_c = c + mv[r % 2][i][1];
+					if (is_valid(R, C, next_r, next_c)) {
+						if (chart[next_r][next_c] == '.') {
+							beach_length++;
+						}
+					}
+				}
+			}
+		}
+	}
+	delete[] chart;
+	return beach_length;
+}
+bool is_valid(int R, int C, int r, int c) {
+	if (r < 0 || c < 0) {
+		return false;
+	}
+	if (r >= R || c >= C) {
+		return false;
+	}
+	return true;
+}
