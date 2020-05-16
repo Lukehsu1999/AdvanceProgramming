@@ -1,0 +1,103 @@
+#include <stdio.h>
+#include <string.h>
+#include <algorithm>
+#include <iostream>
+
+using namespace std;
+
+int n, m, s, t;
+const int MAXN = 30, MAXV = 30, QSZ = MAXN * MAXN * MAXV;
+/*
+MAXN: max num of cities
+MAXV: max velocity
+QSZ: max combination
+*/
+
+struct edge { /* t: to, d: distance, c: capacity*/
+	int t, d, c;
+	edge* next;
+}epool[MAXN * MAXN], * e[MAXN];//epool[From][To], ?e[i]: the start of the linklist which records the edges origining from i
+int psz;//? num of edges?
+double d[MAXN][MAXN][MAXV + 1]; //d[i][j][v] the fastest time can go from i to j at speed v
+int head, tail;
+struct {
+	int f, t, v; //from to velocity
+}que[QSZ];
+bool ins[MAXN][MAXN][MAXV + 1]; //?
+const double INF = 1e9;
+
+inline
+void add_edge(int u, int v, int d, int c)
+{
+	edge* tmp = epool + psz++;
+	tmp->t = v; tmp->d = d; tmp->c = c; tmp->next = e[u]; e[u] = tmp; //store like a link list
+}
+
+void init()
+{
+	psz = 0;
+	memset(e, 0, sizeof(e));
+	cin >> s >> t;
+	--s; --t;
+	while (m--) {
+		int x, y, d, c;
+		cin >> x >> y >> d >> c;
+		--x; --y;
+		add_edge(x, y, d, c);
+		add_edge(y, x, d, c);
+	}
+}
+
+void spfa()
+{
+	for (int i = 0; i < n; ++i) {
+		for (int j = 0; j < n; ++j) {
+			for (int k = 1; k <= MAXV; ++k) {
+				d[i][j][k] = INF;
+				ins[i][j][k] = false;
+			}
+		}
+	}
+	head = 0; tail = 1; que[0].f = s; que[0].t = s; que[0].v = 1;
+	ins[s][s][1] = true; d[s][s][1] = 0;
+	while (head != tail) {
+		//get a current edge with velocity
+		int f = que[head].f, u = que[head].t, v = que[head].v;
+		++head; ins[f][u][v] = false;
+		if (head == QSZ) head = 0;
+		for (edge* i = e[u]; i; i = i->next) { //span from cur edge's destination
+			if (i->t == f || v > i->c) continue; //no cycle (U turn) and do not exceed speed capacity
+			double w = d[f][u][v] + (double)i->d / v; //time to get to nxt
+			if (i->t == t && v == 1) {
+				//cout<<"City "<<t+1<<"determined: "<< min(d[t][t][1], w);
+				d[t][t][1] = std::min(d[t][t][1], w);
+			}
+			//
+			for (int v1 = v - 1; v1 <= v + 1; ++v1) { //3 possibility: decrease/maintain/increase
+				if (v1 < 1) {
+					continue;
+				}
+				if (w < d[u][i->t][v1]) {//try to update
+					d[u][i->t][v1] = w;
+					if (!ins[u][i->t][v1]) { //not visited
+						que[tail].f = u;
+						que[tail].t = i->t;
+						que[tail].v = v1;
+						if (++tail == QSZ) tail = 0;
+						ins[u][i->t][v1] = true; //mark as visited
+					}
+				}
+			}
+		}
+	}
+}
+
+int main()
+{
+	while (cin >> n >> m && !(n == 0 && m == 0)) {
+		init();
+		spfa();
+		if (d[t][t][1] == INF) cout << "unreachable" << endl;
+		else cout << d[t][t][1] << endl;
+	}
+}
