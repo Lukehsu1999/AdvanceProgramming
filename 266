@@ -1,0 +1,99 @@
+#include<iostream>
+#include<vector>
+#include<map>
+
+#define INF 1000
+
+using namespace std;
+
+void print_d(int** d, int n);
+void initialize_d(int** d, int n);
+
+int min(int a, int b) {
+	if (a < b) {
+		return a;
+	}
+	return b;
+}
+
+int main() {
+	
+	//PART 1: INPUT
+	int n_cow, n_mat;
+	while (cin >> n_cow >> n_mat) {
+		int** d;
+		d = new int* [n_cow];
+		for (int i = 0; i < n_cow; i++) {
+			d[i] = new int[n_cow];
+		}
+
+
+		//PART 2: INITIALIZE
+		initialize_d(d, n_cow);
+
+		//PART 3: GET MATCH INPUT
+		for (int i = 0; i < n_mat; i++) {
+			int s, e;
+			cin >> s >> e;
+			d[s - 1][e - 1] = 1;
+		}
+
+		//PART 4: RUN Floyd-Warshall
+		for (int k = 0; k < n_cow; k++) {
+			for (int i = 0; i < n_cow; i++) {
+				for (int j = 0; j < n_cow; j++) {
+					d[i][j] = min(d[i][j], d[i][k] + d[k][j]);
+				}
+			}
+		}
+
+
+		//PART 5: determined
+		int determined = 0;
+		for (int i = 0; i < n_cow; i++) {
+			bool connect = true;
+			for (int j = 0; j < n_cow; j++) {
+				if (i != j) {
+					if (d[i][j] == INF && d[j][i] == INF) {
+						connect=false;
+						break;
+					}
+				}
+			}
+			if (connect) {
+				determined++;
+			}
+		}
+		cout << determined << endl;
+		//print_d(d, n_cow);
+		//cout << endl;
+
+		delete[]d;
+	}
+	
+}
+
+void print_d(int** d, int n) {
+	for (int i = 0; i < n; i++) {
+		for (int j = 0; j < n; j++) {
+			if (d[i][j] == 1000) {
+				cout << 'X'<<" ";
+			}
+			else {
+				cout << d[i][j] << " ";
+			}
+		}
+		cout << endl;
+	}
+}
+
+void initialize_d(int** d, int n) {
+	for (int i = 0; i < n; i++) {
+		for (int j = 0; j < n; j++) {
+			d[i][j] = INF;
+			if (i == j) {
+				d[i][j] = 0;
+			}
+		}
+	}
+}
