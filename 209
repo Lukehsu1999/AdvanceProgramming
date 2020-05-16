@@ -1,0 +1,173 @@
+#include<iostream>
+#include<algorithm>
+
+using namespace std;
+
+struct point {
+	int x;
+	int y;
+	point() {
+		x = 0;
+		y = 0;
+	}
+	point(int n, int m) {
+		x = n;
+		y = m;
+	}
+	bool same(point A) {
+		return (A.x == x) && (A.y == y);
+	}
+};
+struct vec {
+	int x_v;
+	int y_v;
+	vec(point A, point B) {
+		x_v = B.x - A.x;
+		y_v = B.y - A.y;
+	}
+};
+struct segment {
+	point start;
+	point end;
+	segment() {
+		start = point(0, 0);
+		end = point(0, 0);
+	}
+	segment(point s, point e) {
+		start = s;
+		end = e;
+	}
+};
+
+//global function
+int cross_product(vec A, vec B);
+int modified_cross_product(vec A, vec B);
+int dot_product(vec A, vec B);
+bool withinlinesegment(point A, point B, point P); //check whether P is within AB, P not A or B
+bool intersect(segment A, segment B);
+
+//global variable
+segment Allseg[110];
+
+int main() {
+	/*
+	point A(0, 0);
+	point a(6, 0);
+	point B(0, 0);
+	point b(6, 0);
+	segment sA(A, a);
+	segment sB(B, b);
+	cout << intersect(sA, sB) << endl;
+	*/
+	int N;
+	cin >> N;
+	for (int z = 0; z < N; z++) {
+		int M;
+		cin >> M;
+		for (int i = 0; i < M; i++) {
+			int a, b, c, d;
+			cin >> a >> b >> c >> d;
+			point start(a, b);
+			point end(c, d);
+			Allseg[i] = segment(start, end);
+		}
+		int isolate_cnt = 0;
+		for (int i = 0; i < M; i++) { //check if segment i is isolated
+			bool isolate = true;
+			for (int j = 0; j < M; j++) {
+				if (i == j) {
+					continue;
+				}
+				if (intersect(Allseg[i], Allseg[j])) {
+					isolate = false;
+					break;
+				}
+			}
+			if (isolate) {
+				isolate_cnt++;
+			}
+		}
+		cout << isolate_cnt << endl;
+	}
+}
+
+
+int cross_product(vec A, vec B) {
+	return A.x_v * B.y_v - A.y_v * B.x_v;
+}
+int modified_cross_product(vec A, vec B) {
+	int res=A.x_v * B.y_v - A.y_v * B.x_v;
+	if (res < 0) {
+		return -1;
+	}
+	else if (res > 0) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+int dot_product(vec A, vec B) { //note if A=B, the dot product will be the square of A's magnitude
+	return A.x_v * B.x_v + A.y_v * B.y_v;
+}
+bool withinlinesegment(point A, point B, point P) {
+	vec BA = vec(B, A);
+	vec PA = vec(P, A);
+	if (cross_product(BA, PA) == 0) { //align
+		if (dot_product(BA, PA) > 0 && dot_product(BA, PA) < dot_product(BA, BA)) { //P within AB
+			return true;
+		}
+	}
+	return false;
+}
+
+
+bool intersect(segment A, segment B) {
+	bool intersect = true;
+
+	//check B and b are on different side of A
+	vec Aa(A.start, A.end);
+	vec aB(A.end, B.start);
+	vec ab(A.end, B.end);
+	if (modified_cross_product(Aa, aB) * modified_cross_product(Aa, ab) > 0) {
+		intersect = false;
+		return false;
+	}
+
+	//check A and a are on different side of B
+	vec Bb(B.start, B.end);
+	vec ba(B.end, A.end);
+	vec bA(B.end, A.start);
+	if (modified_cross_product(Bb, ba) * modified_cross_product(Bb, bA) > 0) {
+		intersect = false;
+		return false;
+	}
+
+	//check special case: A---a ... B---b
+	/*
+	case:
+	A---a ... B---b
+	A---a ... b---B
+	a---A ... B---b
+	a---A ... b---B
+	
+	what if A---a(b)---B ? nw <
+
+	*/
+	if (cross_product(Aa, Bb) == 0) { //align
+		if (withinlinesegment(A.start, B.start, A.end) && withinlinesegment(A.end, B.end, B.start)) {
+			return false;
+		}
+		if (withinlinesegment(A.start, B.end, A.end) && withinlinesegment(A.end, B.start, B.end)) {
+			return false;
+		}
+		if (withinlinesegment(A.end, B.start, A.start) && withinlinesegment(A.start, B.end, B.start)) {
+			return false;
+		}
+		if (withinlinesegment(A.end, B.end, A.start) && withinlinesegment(A.start, B.start, B.end)) {
+			return false;
+		}
+	}
+
+	return true;
+}
