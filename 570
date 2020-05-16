@@ -1,0 +1,122 @@
+#include<iostream>
+#include<string>
+#include<algorithm>
+#include<map>
+#include<vector>
+using namespace std;
+
+//global variable
+map<char, int>letter_cst;
+bool visited[1024];
+
+//global function
+void initialize_letter_cst();
+int get_transport_cost(int rightmst, int leftmst, int length);
+
+int main() {
+	int n_case;
+	cin >> n_case;
+	initialize_letter_cst();
+	for (int z = 0; z < n_case; z++) {
+
+		//input
+		string test_case;
+		cin >> test_case;
+		
+		int length = test_case.length();
+
+		//get character cost and record nonApos
+		int character_cost = 0;
+		vector<int>nonApos;
+		//note: must include original point
+		for (int i = 0; i < test_case.length(); i++) {
+			if (test_case[i] != 'A'||i==0) {
+				character_cost += letter_cst[test_case[i]];
+				nonApos.push_back(i);
+			}
+		}
+
+		//get transport cost
+		//note: must include orignal point
+		//get the max gap
+		int rightmst=0;
+		int leftmst=0;
+		int min_transport_cost = length - 1;
+		for (int i = 0; i < nonApos.size(); i++) {
+			int t_rightmst = nonApos[i];
+			int t_leftmst = nonApos[(i + 1)%nonApos.size()];
+			int temp_t_cost = get_transport_cost(t_rightmst, t_leftmst,length);
+			if (temp_t_cost<min_transport_cost) {
+				min_transport_cost = temp_t_cost;
+			}
+		}
+		
+		
+		cout <<"c: "<< character_cost << " t: " << min_transport_cost << " all: " << character_cost + min_transport_cost << endl;
+		cout << character_cost + min_transport_cost << endl;
+		
+	}
+}
+
+
+void initialize_letter_cst() {
+	for (char c = 'A'; c <= 'Z'; c++) {
+		int rcst = int(c - 'A');
+		int lcst = int('Z' - c) + 1;
+		letter_cst[c] = min(rcst, lcst);
+		//cout << c << " : " << letter_cst[c] << endl;
+	}
+}
+int get_transport_cost(int rightmst, int leftmst, int length) {
+	int right_cst = rightmst;
+	int left_cst = length - leftmst;
+	if (leftmst == 0) {
+		left_cst = 0;
+	}
+	return right_cst + left_cst + min(right_cst, left_cst);
+}
+
+
+/*
+12
+BABBBAAABBB
+JEROEN
+JAN
+ANDJELA
+BABAAB
+AAAAA
+BABABA
+LUKA
+ABCDEFGHIJKLMNOPQRST
+BBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABB
+BBABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABB
+BBBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAB
+
+Sol:
+c: 7 t: 9 all: 16
+16
+c: 51 t: 5 all: 56
+56
+c: 22 t: 1 all: 23
+23
+c: 40 t: 5 all: 45
+45
+c: 3 t: 4 all: 7
+7
+c: 0 t: 0 all: 0
+0
+c: 3 t: 4 all: 7
+7
+c: 27 t: 2 all: 29
+29
+c: 148 t: 19 all: 167
+167
+c: 4 t: 4 all: 8
+8
+c: 5 t: 7 all: 12
+12
+c: 5 t: 7 all: 12
+12
+
+
+*/
