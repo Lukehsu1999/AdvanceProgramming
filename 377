@@ -1,0 +1,173 @@
+#include <iostream>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <algorithm>
+#include <cmath>
+#include <queue>
+
+#include <set>
+#include <map>
+#include <string>
+
+#define CL(a,num) memset((a),(num),sizeof(a))
+#define iabs(x)  ((x) > 0 ? (x) : -(x))
+#define Min(a,b) (a) > (b)? (b):(a)
+#define Max(a,b) (a) > (b)? (a):(b)
+
+#define ll long long
+
+#define MOD 1073741824
+#define lc l,m,rt<<1
+#define rc m + 1,r,rt<<1|1
+#define pi acos(-1.0)
+#define test puts("<------------------->")
+#define maxn 100007
+#define M 155000
+#define N 5007
+using namespace std;
+//freopen("din.txt","r",stdin);
+const __int64 inf = 0x3f3f3f3f3f3f3f3fll;
+
+struct node
+{
+    int u, v;
+    ll w;
+    int next;
+}g[M];
+int head[N], ct;
+
+int q[N * 100], l, r;
+int vt[N];
+int out[N];
+ll level[N];
+
+ll zw, val[N];
+int num;
+int n, m;
+
+void add(int u, int v, ll w) //add_edge
+{
+    g[ct].u = u;
+    g[ct].v = v;
+    g[ct].w = w;
+    g[ct].next = head[u];
+    head[u] = ct++;
+
+    g[ct].u = v;
+    g[ct].v = u;
+    g[ct].w = 0;
+    g[ct].next = head[v];
+    head[v] = ct++;
+}
+bool layer(int s, int e) //bfs
+{
+    int i;
+    CL(level, -1);
+    level[s] = 0;
+    int l = 0, r = 0;
+    q[r] = s;
+    while (l <= r) {
+        int u = q[l++];
+        for (i = head[u]; i != -1; i = g[i].next)
+        {
+            int v = g[i].v;
+            if (level[v] == -1 && g[i].w > 0)
+            {
+                level[v] = level[u] + 1;
+                q[++r] = v;
+                if (v == e) return true;
+            }
+        }
+    }
+    return false;
+}
+
+ll dinic(int s, int e) { //max_flow +dfs
+    ll ans = 0;
+    while (layer(s, e))
+    {
+        int top = 0, u = s, i;
+        for (i = s; i <= e; ++i) out[i] = head[i];
+        while (out[s] != -1)
+        {
+            if (u == e)
+            {
+                ll MIN = inf;
+                for (i = top - 1; i >= 0; --i)
+                {
+                    MIN = min(MIN, g[q[i]].w);
+                }
+                for (i = top - 1; i >= 0; --i)
+                {
+                    g[q[i]].w -= MIN;
+                    g[q[i] ^ 1].w += MIN;
+                    if (g[q[i]].w == 0) top = i;
+                }
+                ans += MIN;
+                u = g[q[top]].u;
+            }
+            else if (out[u] != -1 && g[out[u]].w > 0 && level[u] + 1 == level[g[out[u]].v])
+            {
+                q[top++] = out[u];
+                u = g[out[u]].v;
+            }
+            else
+            {
+                while (top > 0 && u != s && out[u] == -1)
+                    u = g[q[--top]].u;
+                out[u] = g[out[u]].next;
+            }
+        }
+    }
+    return ans;
+}
+void dfs(int s) //find the nodes connected to source
+{
+    vt[s] = 1; num++;
+    for (int i = head[s]; i != -1; i = g[i].next)
+    {
+        int v = g[i].v;
+        int w = g[i].w;
+        if (!vt[v] && w > 0)  dfs(v);
+    }
+}
+void solve(int s, int e)
+{
+    ll tmp = dinic(s, e);//求最小割
+    CL(vt, 0);  num = 0;
+    dfs(s);//求裁员个数
+    printf("%d %I64d\n", num - 1, zw - tmp);//这里num多加了0
+}
+int main()
+{
+    //freopen("din.txt","r",stdin);
+    int i;
+    int x, y;
+    while (cin>>n>>m)
+    {
+        CL(head, -1); ct = 0;
+        //建图
+        int s = 0, e = n + 1;
+        for (i = 1; i <= n; ++i)
+        {
+            cin >> val[i];
+            if (val[i] >= 0)
+            {
+                zw += val[i];
+                add(s, i, val[i]);//点的权值大于0
+            }
+            else//小于0
+            {
+                add(i, e, -val[i]);
+            }
+        }
+        for (i = 1; i <= m; ++i)
+        {
+            cin >> x >> y;
+            add(x, y, inf);
+        }
+        solve(s, e);
+    }
+    return 0;
+}
