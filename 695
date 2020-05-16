@@ -1,0 +1,130 @@
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+#define MAX 6000
+
+int countTrailingZeros(string s);
+int constructNewBase(int* newBase, string baseString); // return no. of decimal points
+void printBigNumArr(int* num, int nDig);
+int nOfDigits(int* num);
+void mutiply(int* num, int x, int& nDigit);
+void power(int* numArr, int numInt, int exp, int& nDigit);
+int numArrToInt(int* numArr, int nDig);
+void printPlusDeciPoint(int* num, int nDigit, int nDeci);
+void powerQuicker(int* numArr, int numInt, int exp, int& nDigit); // repeated squaring?
+
+int main() {
+    string baseString;
+    int exp;
+    while (cin >> baseString >> exp) {
+        int newBase[MAX] = { 0 };
+        int nDeci = constructNewBase(newBase, baseString);
+        int nDigit = nOfDigits(newBase);
+        int AllLen = 5 - countTrailingZeros(baseString);
+        if (baseString[0] == '0') {
+            AllLen -= 1;
+        }
+        //cout << nDeci << " " << nDigit <<" "<<AllLen<< endl;
+        printBigNumArr(newBase, nDigit);
+        cout << endl;
+        //mutiply(newBase, 2, nDigit);
+        power(newBase, numArrToInt(newBase, nDigit), exp, nDigit);
+        //cout << " -> ";
+        //printBigNumArr(newBase, nDigit);
+        printPlusDeciPoint(newBase, nDigit, nDeci * exp);
+        //cout << "; N OF DECI POINT: " << nDeci;
+        cout << endl;
+    }
+}
+
+int countTrailingZeros(string s) {
+    int zeroCount = 0;
+    for (int i = 5; i >= 2; i--) {
+        if (s[i] == '0')
+            zeroCount++;
+        else
+            return zeroCount;
+    }
+    return zeroCount;
+}
+
+int constructNewBase(int* newBase, string baseString) {
+    int nTrailingZeros = countTrailingZeros(baseString);
+    int dotPosition;
+    for (int i = 0; i < baseString.length(); i++) {
+        if (baseString[i] == '.') {
+            dotPosition = i;
+            break;
+        }
+    }
+    int i = 0, j = 5 - nTrailingZeros;
+    while (j >= 0) {
+        if (j != dotPosition) {
+            newBase[i] = int(baseString[j]) - 48;
+            i++;
+        }
+        j--;
+    }
+    return 5 - dotPosition - nTrailingZeros;
+}
+
+void printBigNumArr(int* num, int nDig) {
+    for (int i = nDig - 1; i >= 0; i--) {
+        cout << num[i];
+    }
+}
+
+int nOfDigits(int* num) {
+    for (int i = 4; i >= 0; i--) {
+        if (num[i] != 0) return i + 1;
+    }
+}
+
+void mutiply(int* num, int x, int& nDigit) {
+    int carry = 0;
+    for (int i = 0; i < nDigit; i++) {
+        num[i] = x * num[i] + carry;
+        carry = num[i] / 10;
+        num[i] = num[i] % 10;
+    }
+    while (carry) {
+        num[nDigit] = carry % 10;
+        carry /= 10;
+        nDigit++;
+    }
+}
+
+void power(int* numArr, int numInt, int exp, int& nDigit) {
+    if (exp == 0) {
+        numArr = { 0 };
+        return;
+    }
+    if (exp == 1) return;
+    for (int i = 2; i <= exp; i++) {
+        mutiply(numArr, numInt, nDigit);
+    }
+}
+
+
+int numArrToInt(int* numArr, int nDig) {
+    int ans = 0;
+    for (int i = nDig - 1; i >= 0; i--) {
+        ans += numArr[i];
+        ans *= 10;
+    }
+    return ans / 10;
+}
+
+void printPlusDeciPoint(int* num, int nDigit, int nDeci) {
+    if (nDeci > nDigit) {
+        cout << ".";
+        for (int i = 0; i < nDeci - nDigit; i++)
+            cout << 0;
+    }
+    for (int i = nDigit - 1; i >= 0; i--) {
+        if (i == nDeci - 1) cout << ".";
+        cout << num[i];
+    }
+}
