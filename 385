@@ -1,0 +1,168 @@
+#include<iostream>
+#include<stack>
+#include<algorithm>
+
+using namespace std;
+
+struct point {
+	int x;
+	int y;
+	point() {
+		x = 0;
+		y = 0;
+	}
+	point(int n, int m) {
+		x = n;
+		y = m;
+	}
+	bool same(point A) {
+		return (A.x == x) && (A.y == y);
+	}
+};
+struct vec {
+	int x_v;
+	int y_v;
+	vec() {
+		x_v = 0;
+		y_v = 0;
+	}
+	vec(point A, point B) {
+		x_v = B.x - A.x;
+		y_v = B.y - A.y;
+	}
+	void print() {
+		cout << x_v << " " << y_v << endl;
+	}
+};
+
+//for convex hall
+typedef struct Cnode
+{
+	int x, y, d;
+}Cnode;
+Cnode P[106];
+
+
+//global function
+int cross_product(vec A, vec B);
+int dot_product(vec A, vec B);
+double get_area(vec vs[]); //get area of polygon
+double Graham();
+
+//convex hall
+int crossproduct(Cnode a, Cnode b, Cnode c);
+int dist(Cnode a, Cnode b);
+bool cmp1(Cnode a, Cnode b);
+bool cmp2(Cnode a, Cnode b);
+
+//global variables
+int nPoints; //also equals to nVectors-1
+int nVecs;
+point Point_set[105];
+vec Vector_set[105];
+
+
+int main() {
+    int case_id = 1;
+	while (cin >> nPoints) {
+        if (nPoints == 0) {
+            break;
+        }
+		//part 1: get input points
+		for (int i = 0; i < nPoints; i++) {
+			int x, y;
+			cin >> x >> y;
+			point new_p(x, y);
+			Point_set[i] = new_p;
+
+			P[i].x = x;
+			P[i].y = y;
+		}
+
+		//part 2: build vectors
+		nVecs = nPoints - 1;
+		for (int i = 1; i < nPoints; i++) {
+			vec new_vec(Point_set[0], Point_set[i]);
+			Vector_set[i] = new_vec;
+		}
+		//part 3: get tile area
+		double tile_area = fabs(get_area(Vector_set));
+		//cout << tile_area << endl;
+
+        //part 4: get convex hall points
+		double convex_area = Graham();
+		
+        //part 7: get wasted space
+        double wasted_space = convex_area - tile_area;
+        double answer = wasted_space*100.0 / convex_area;
+        cout << "Tile #" << case_id << endl;
+        printf("Wasted Space = %.2lf %%\n\n", answer);
+        case_id++;
+	}
+}
+
+
+int cross_product(vec A, vec B) {
+	return A.x_v * B.y_v - A.y_v * B.x_v;
+}
+
+int dot_product(vec A, vec B) { //note if A=B, the dot product will be the square of A's magnitude
+	return A.x_v * B.x_v + A.y_v * B.y_v;
+}
+
+double get_area(vec vs[]) {
+	double sum = 0;
+	for (int i = 0; i < nVecs; i++) {
+		sum += cross_product(vs[i], vs[(i + 1) % nPoints]);
+	}
+	sum = sum/2.00;
+	return sum;
+}
+
+//functions for convex hal
+int crossproduct(Cnode a, Cnode b, Cnode c)
+{
+	return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+}
+
+
+int dist(Cnode a, Cnode b)
+{
+	return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
+}
+
+
+bool cmp1(Cnode a, Cnode b)
+{
+	return (a.x == b.x) ? (a.y < b.y) : (a.x < b.x);
+}
+
+
+bool cmp2(Cnode a, Cnode b)
+{
+	double cp = crossproduct(P[0], a, b);
+	if (!cp) return a.d < b.d;
+	else return cp > 0;
+}
+
+double Graham()
+{
+	int n = nPoints;
+	sort(P + 0, P + n, cmp1);
+	for (int i = 1; i < n; ++i)
+		P[i].d = dist(P[0], P[i]);
+	sort(P + 1, P + n, cmp2);
+
+	int top = 1;
+	for (int i = 2; i < n; ++i) {
+		while (top > 0 && crossproduct(P[top - 1], P[top], P[i]) <= 0) --top;
+		P[++top] = P[i];
+	}
+
+	double S2 = 0.0;
+	for (int i = 1; i < top; ++i)
+		S2 += 0.5 * crossproduct(P[0], P[i], P[i + 1]);
+
+	return fabs(S2);
+}
+
