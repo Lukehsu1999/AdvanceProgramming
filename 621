@@ -1,0 +1,176 @@
+#include<iostream>
+#include<vector>
+#include<algorithm>
+#include<string>
+#define MAX_V 55
+#define MAX_E 100
+
+using namespace std;
+
+//struct
+struct edge {
+	int u;
+	int v;
+	int cost;
+};
+bool comp_inc(const edge& e1, const edge& e2) {
+	return e1.cost < e2.cost;
+}
+bool comp_dec(const edge& e1, const edge& e2) {
+	return e1.cost > e2.cost;
+}
+
+//globald variables
+int V, E;
+int par[MAX_V];
+int rk[MAX_V];
+int curm[MAX_V][MAX_V]; //current map
+int rmvc[MAX_V][MAX_V]; //removal cost
+int bldc[MAX_V][MAX_V]; //building cost
+
+vector<edge>es;
+
+//global functions
+void init_disjoint_set(int n);
+int find(int x);
+void unite(int x, int y);
+bool same(int x, int y);
+int kruskal();
+void print_mtx(int m[MAX_V][MAX_V], int V);
+
+int main() {
+	while (cin >> V) {
+		if (V == 0) {
+			break;
+		}
+		//PART 0: Initialization
+		init_disjoint_set(V);
+		es.clear();
+
+		//PART 1: input
+		//get current connections
+		for (int i = 0; i < V; i++) {
+			string input;
+			cin >> input;
+			for (int j = 0; j < V; j++) {
+				curm[i][j] = input[j]-'0';
+			}
+		}
+		//get building cost
+		for (int i = 0; i < V; i++) {
+			for (int j = 0; j < V; j++) {
+				cin >> bldc[i][j];
+			}
+		}
+		//get removal cost
+		for (int i = 0; i < V; i++) {
+			for (int j = 0; j < V; j++) {
+				cin >> rmvc[i][j];
+			}
+		}
+		//print_mtx(curm, V);
+		//print_mtx(bldc, V);
+		//print_mtx(rmvc, V);
+
+		//PART 2: Removal Cost
+		//Add currently existing edges into es
+		int total_rmvc = 0;
+		for (int i = 0; i < V; i++) {
+			for (int j = i + 1; j < V; j++) {
+				if (curm[i][j] == 1) {
+					edge new_edge;
+					new_edge.u = i;
+					new_edge.v = j;
+					new_edge.cost = rmvc[i][j];
+					es.push_back(new_edge);
+					total_rmvc += rmvc[i][j];
+				}
+			}
+		}
+		//sort es from highest removal cost to lowest
+		sort(es.begin(), es.end(), comp_dec);
+		total_rmvc -= kruskal();
+		es.clear();
+
+		//PART 3: Building cost calculation
+		int total_bldc = 0;
+		for (int i = 0; i < V; i++) {
+			for (int j = i + 1; j < V; j++) {
+				if (curm[i][j] == 0) {
+					edge new_edge;
+					new_edge.u = i;
+					new_edge.v = j;
+					new_edge.cost = bldc[i][j];
+					es.push_back(new_edge);
+				}
+			}
+		}
+		sort(es.begin(), es.end(), comp_inc);
+		total_bldc += kruskal();
+		es.clear();
+
+		cout << total_rmvc + total_bldc << endl;
+	}
+}
+
+void init_disjoint_set(int n) {
+	for (int i = 0; i < n; i++) {
+		rk[i] = 0;
+		par[i] = i;
+	}
+}
+int find(int x) {
+	if (par[x] == x) {
+		return x;
+	}
+	else {
+		return par[x] = find(par[x]);
+	}
+}
+void unite(int x, int y) {
+	x = find(x);
+	y = find(y);
+	if (x == y) {
+		return;
+	}
+	if (rk[x] < rk[y]) {
+		par[x] = y;
+	}
+	else {
+		par[y] = x;
+		if (rk[x] == rk[y]) {
+			rk[x]++;
+		}
+	}
+}
+bool same(int x, int y) {
+	x = find(x);
+	y = find(y);
+	if (x == y) {
+		return true;
+	}
+	return false;
+}
+int kruskal() {
+	int res = 0;
+	for (int i = 0; i < es.size(); i++) {
+		edge cur = es[i];
+		if (!same(es[i].u, es[i].v)) {
+			unite(es[i].u, es[i].v);
+			res += es[i].cost;
+		}
+		else {
+			curm[es[i].u][es[i].v] = 0;
+			curm[es[i].v][es[i].u] = 0;
+		}
+	}
+	return res;
+}
+void print_mtx(int m[MAX_V][MAX_V], int V) {
+	for (int i = 0; i < V; i++) {
+		for (int j = 0; j < V; j++) {
+			cout << m[i][j] << " ";
+		}
+		cout << endl;
+	}
+}
