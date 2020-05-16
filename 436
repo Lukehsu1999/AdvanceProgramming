@@ -1,0 +1,113 @@
+#include<iostream>
+#include<algorithm>
+#include<string>
+#include<vector>
+#define MAX_N 1000010
+
+using namespace std;
+
+bool is_prime[MAX_N];
+int is_circular_prime[MAX_N]; //-1: not circular prime (also not prime); 0: undetermined prime; 1: circular prime
+vector<int>circular_prime_list;
+vector<int>prime_list;
+
+void Eratosthenes(int n);
+int count_circular(int left, int right);
+void check_circular(int n); 
+void set_cp_list();
+
+int main() {
+	int left, right;
+	
+	Eratosthenes(1000005);
+	set_cp_list();
+	//cout << is_prime[99371] << endl;
+	//check_circular(19937);
+	while (cin >> left) {
+		if (left == -1) {
+			break;
+		}
+		else {
+			cin >> right;
+			int cnt = count_circular(left, right);
+			if (cnt == 0) {
+				cout << "No Circular Primes." << endl;
+			}
+			else if (cnt == 1) {
+				cout << "1 Circular Prime." << endl;
+			}
+			else {
+				cout << cnt << " Circular Primes." << endl;
+			}
+		}
+	}
+}
+
+void Eratosthenes(int n) {
+	for (int i = 0; i <= n; i++) {
+		is_prime[i] = true;
+		//is_circular_prime[i] = 0;
+	}
+	is_prime[0] = is_prime[1] = false;
+	//is_circular_prime[0] = is_circular_prime[1] = -1;
+	for (int i = 2; i <= n; i++) {
+		if (is_prime[i]) {
+			prime_list.push_back(i);
+			for (int j = 2; j*i <= n; j += 1) {
+				is_prime[j*i] = false;
+				//is_circular_prime[j*i] = -1;
+			}
+		}
+	}
+}
+int count_circular(int left, int right) {
+	int cnt = 0;
+	for (int i = 0; i < circular_prime_list.size(); i++) {
+		if (left<=circular_prime_list[i]&&circular_prime_list[i]<=right) {
+			cnt++;
+		}
+	}
+	return cnt;
+}
+void check_circular(int n) { //only return -1/1
+	int multiplier = 1;
+	int number = n;
+	int count = 0; //digit count
+	int d;
+	if (n == 2 || n == 5) {
+		circular_prime_list.push_back(n);
+		return;
+	}
+	while (number > 0) {
+		d = number % 10;
+		if (d % 2 == 0 || d == 5) {
+			return;
+		}
+		number /= 10;
+		multiplier *= 10;
+		count++;
+	}
+	multiplier /= 10;
+
+	//rotate and check
+	bool success = true;
+	number = n;
+	for (int i = 0; i < count; i++) {
+		if (is_prime[number]) {
+			d = number % 10;
+			number = d * multiplier + number / 10;
+		}
+		else {
+			success = false;
+			break;
+		}
+	}
+	if (success) {
+		circular_prime_list.push_back(n);
+	}
+}
+void set_cp_list() {
+	for (int i = 0; i < prime_list.size(); i++) {
+		check_circular(prime_list[i]);
+	}
+}
