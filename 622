@@ -1,0 +1,202 @@
+#include<iostream>
+#include<algorithm>
+#include<string>
+#include<string.h>
+
+#define MAX_N 1010
+
+using namespace std;
+
+int n, k;
+int Rank[MAX_N];
+int tmp[MAX_N];
+
+bool compare_sa(int i, int j); //compare (Rank[i],Rank[i+k]) and (Rank[j],Rank[j+k])
+void construct_sa(string S, int* sa); //construct suffix array of string S
+bool contain(string S, int* sa, string T);
+void print_sa_lcp(string S, int* sa, int* lcp);
+void construct_lcp(string S, int* sa, int* lcp);
+string find_LRS(string S, int* sa, int* lcp);//find largest repeated substring
+
+void computeLPSArray(string pat, int M, int* lps);
+int KMPCount(string pat, string txt);
+
+int main() {
+	int T;
+	cin >> T;
+	for (int z = 0; z < T;z++) {
+		string s;
+		cin >> s;
+		int* sa = new int[s.length()+1];
+		int* lcp = new int[s.length()+1];
+		construct_sa(s, sa);
+		construct_lcp(s, sa, lcp);
+		string lrs=find_LRS(s, sa, lcp);
+		if (lrs == "") {
+			cout << "No repetitions found!" << endl;
+		}
+		else {
+			cout << lrs << " ";
+			cout << KMPCount(lrs, s) << endl;
+		}
+		delete[] sa;
+		delete[] lcp;
+	}
+}
+
+
+
+bool compare_sa(int i, int j) {
+	if (Rank[i] != Rank[j]) {
+		return Rank[i] < Rank[j];
+	}
+	else {
+		int ri = i + k <= n ? Rank[i + k] : -1;
+		int rj = j + k <= n ? Rank[j + k] : -1;
+		return ri < rj;
+	}
+}
+
+void construct_sa(string S, int* sa) {
+	n = S.length();
+
+	//initialize sa as its location
+	for (int i = 0; i <= n; i++) {
+		sa[i] = i;
+		Rank[i] = i < n ? S[i] : -1;
+	}
+
+	//move on to 2k once k is finished
+	for (k = 1; k <= n; k *= 2) {
+		sort(sa, sa + n + 1, compare_sa);
+		//use tmp to temporary store the result before updating Rank
+		tmp[sa[0]] = 0;
+		for (int i = 1; i <= n; i++) {
+			tmp[sa[i]] = tmp[sa[i - 1]] + (compare_sa(sa[i - 1], sa[i]) ? 1 : 0);
+		}
+
+		//update result to Rank
+		for (int i = 0; i <= n; i++) {
+			Rank[i] = tmp[i];
+		}
+	}
+}
+
+bool contain(string S, int* sa, string T) {
+	int a = 0, b = S.length();
+	while (b - a > 1) {
+		int c = (a + b) / 2;
+		if (S.compare(sa[c], T.length(), T) < 0) {
+			a = c;
+		}
+		else {
+			b = c;
+		}
+	}
+	return S.compare(sa[b], T.length(), T) == 0;
+}
+
+void print_sa_lcp(string S, int* sa, int* lcp) {
+	for (int i = 1; i < S.length(); i++) {
+		cout << "rank: " << Rank[sa[i]] << " sa: " << sa[i] << " lcp: " << lcp[i] << endl;
+		for (int j = sa[i]; j < S.length(); j++) {
+			cout << S[j];
+		}
+		cout << endl;
+	}
+}
+
+void construct_lcp(string S, int* sa, int* lcp) {
+	int n = S.length();
+	for (int i = 0; i <= n; i++) {
+		Rank[sa[i]] = i;
+	}
+	int h = 0;
+	lcp[0] = 0;
+	for (int i = 0; i < n; i++) {
+		//get the suffix at index i and the lcp of the previous suffix
+		int j = sa[Rank[i] - 1];
+
+		//h delete the 1 from start, if the backward is same, continue increasing
+		if (h > 0)h--;
+		for (; j + h < n && i + h < n; h++) {
+			if (S[j + h] != S[i + h]) {
+				break;
+			}
+		}
+		lcp[Rank[i] - 1] = h;
+	}
+}
+string find_LRS(string S, int* sa, int* lcp) {
+	int max_len = -1;
+	string lrs;
+	for (int i = 0; i < S.length(); i++) {
+		if (lcp[i] > max_len) {
+			max_len = lcp[i];
+			lrs = S.substr(sa[i], max_len);
+		}
+		else if (lcp[i] == max_len) {
+			string this_sol = S.substr(sa[i], max_len);
+			if (lrs>this_sol) {
+				lrs = this_sol;
+			}
+		}
+	}
+	return lrs;
+}
+
+int KMPCount(string pat, string txt) {
+	int M = pat.length();
+	int N = txt.length();
+	int occurrence = 0;
+
+	int* lps = new int[M]; //longest prefix suffix
+	computeLPSArray(pat, M, lps);
+
+	int i = 0; //index for txt
+	int j = 0; //index for pat
+	while (i < N) {
+		if (pat[j] == txt[i]) {
+			j++;
+			i++;
+		}
+		if (j == M) {
+			//cout << "Found pattern at index " << i - j << endl;
+			j = lps[j - 1];
+			occurrence++;
+		}
+		//mismatch after j matches
+		else if (i < N && pat[j] != txt[i]) {
+			//no need to match lps[0..lps[j-1]] characters, they will match anyway
+			if (j != 0) {
+				j = lps[j - 1];
+			}
+			else {
+				i = i + 1;
+			}
+		}
+	}
+	return occurrence;
+}
+
+void computeLPSArray(string pat, int M, int* lps) {
+	int len = 0;
+	lps[0] = 0;
+	int i = 1;
+	while (i < M) {
+		if (pat[i] == pat[len]) {
+			len++;
+			lps[i] = len;
+			i++;
+		}
+		else { //pat[i] != pat[len]
+			if (len != 0) {
+				len = lps[len - 1];
+			}
+			else {
+				lps[i] = 0;
+				i++;
+			}
+		}
+	}
+}
