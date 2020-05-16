@@ -1,0 +1,134 @@
+/*
+Sort all routes may lead to TLE
+need to use adjacency matrix first
+*/
+#include<iostream>
+#include<vector>
+#include<algorithm>
+#include<string>
+#define MAX_V 55
+#define INF 10000
+
+using namespace std;
+
+struct edge {
+	int u;
+	int v;
+	int cost;
+};
+bool comp(const edge& e1, const edge& e2) {
+	return e1.cost < e2.cost;
+}
+
+long long int V, E;
+int par[MAX_V];
+int rk[MAX_V];
+
+int adj_m[MAX_V][MAX_V];
+vector<edge>es;
+
+
+//functions related to disjoint set
+void init_disjoint_set(int n) {
+	for (int i = 0; i < n; i++) {
+		rk[i] = 0;
+		par[i] = i;
+	}
+}
+
+int find(int x) {
+	if (par[x] == x) {
+		return x;
+	}
+	else {
+		return par[x] = find(par[x]);
+	}
+}
+
+void unite(int x, int y) {
+	x = find(x);
+	y = find(y);
+	if (x == y) {
+		return;
+	}
+	if (rk[x] < rk[y]) {
+		par[x] = y;
+	}
+	else {
+		par[y] = x;
+		if (rk[x] == rk[y]) {
+			rk[x]++;
+		}
+	}
+}
+bool same(int x, int y) {
+	x = find(x);
+	y = find(y);
+	if (x == y) {
+		return true;
+	}
+	return false;
+}
+
+//functions with kruskal
+void init_adj_m() {
+	for (int i = 0; i <= V; i++) {
+		for (int j = 0; j <= V; j++) {
+			adj_m[i][j] = INF;
+		}
+	}
+}
+int kruskal() {
+	sort(es.begin(), es.end(), comp);
+	init_disjoint_set(V+1);
+	int res = 0;
+	for (int i = 0; i < es.size(); i++) {
+		edge cur = es[i];
+		if (!same(es[i].u, es[i].v)) {
+			unite(es[i].u, es[i].v);
+			res += es[i].cost;
+		}
+	}
+	return res;
+}
+int main() {
+	while (cin >> V) {
+		if (V == 0) {
+			break;
+		}
+		cin >> E;
+		
+		//PART 1: init adj and es
+		init_adj_m();
+		es.clear();
+
+		//PART 2: get input to adj_m
+		for (long long int i=0; i < E; i++) {
+			int u, v, len;
+			cin >> u >> v >> len;
+			if (adj_m[u][v] > len) {
+				adj_m[u][v] = len;
+				adj_m[v][u] = len;
+			}
+		}
+
+		//PART 3: from adj_m to edge_set
+		for (int i = 1; i <= V; i++) {
+			for (int j = i; j <= V; j++) {
+				if (adj_m[i][j] != INF) {
+					edge new_edge;
+					new_edge.u = i;
+					new_edge.v = j;
+					new_edge.cost = adj_m[i][j];
+					es.push_back(new_edge);
+				}
+			}
+		}
+
+		//PART 4: Kruskal
+		cout << kruskal() << endl;
+
+		string none;
+		getline(cin, none);
+	}
+}
