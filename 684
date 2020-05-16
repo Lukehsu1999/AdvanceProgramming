@@ -1,0 +1,140 @@
+#include<iostream>
+#include<algorithm>
+#include<vector>
+#include<queue>
+#define MAX_V 1500  //at most 100 A modes; 100 B modes; 1000 machine tasks
+#define INF 2147483647
+
+using namespace std;
+
+struct edge { int to, cap, rev; };
+
+//global variable
+int N, M, K;
+int Total_V;
+vector<edge>G[MAX_V];
+int level[MAX_V]; //distance to s
+int iter[MAX_V]; //record the search position
+
+//global functions
+void add_edge(int from, int to, int cap);
+void bfs(int s);
+int dfs(int v, int t, int f);
+int max_flow(int s, int t);
+void reset(int arr[], int value, int size);
+
+int main() {
+	while (cin >> N >> M >> K) {
+		Total_V = N + M + K + 10;
+		/*
+		node 0 : A0 : source
+		node 1-(N-1) : A modules; 
+		node N: B0: terminal
+		node (N+1) - (N+M-1): B modules
+		node (N+M) - (N+M+K-1): tasks
+		*/
+		int s = 0;
+		int t = N;
+
+		//PART 1: Initialize
+		for (int i = 0; i <= Total_V; i++) {
+			G[i].clear();
+		}
+		reset(iter, 0, Total_V);
+		reset(level, -1, Total_V);
+
+		//PART 2: link A modules with s
+		for (int i = 1; i < N; i++) {
+			add_edge(s, i, 1);
+		}
+
+		//PART 3: link B modules with t
+		for (int j = N + 1; j < N + M; j++) {
+			add_edge(j, t, 1);
+		}
+
+		//PART 3: input data transfer cost
+		for (int k = N+M; k < N+M+K; k++) {
+			int ax, by;
+			cin >> ax >> by;
+			//if can be processed by A0 or B0 -> process directly, so can be ignored
+			if (ax == 0 || by == 0) {
+				continue;
+			}
+			add_edge(ax, k, 1);
+			add_edge(k, N+by, 1);
+		}
+
+		//PART 4: max flow
+		cout << max_flow(s, t) << endl;
+	}
+}
+
+void add_edge(int from, int to, int cap) {
+	edge forward;
+	forward.to = to;
+	forward.cap = cap;
+	forward.rev = G[to].size();
+	G[from].push_back(forward);
+	edge backward;
+	backward.to = from;
+	backward.cap = 0;
+	backward.rev = G[from].size() - 1;
+	G[to].push_back(backward);
+}
+
+void bfs(int s) {
+	reset(level, -1, Total_V);
+	queue<int>que;
+	level[s] = 0;
+	que.push(s);
+	while (!que.empty()) {
+		int v = que.front();
+		que.pop();
+		for (int i = 0; i < G[v].size(); i++) {
+			edge& e = G[v][i];
+			if (e.cap > 0 && level[e.to] < 0) {
+				level[e.to] = level[v] + 1;
+				que.push(e.to);
+			}
+		}
+	}
+}
+
+int dfs(int v, int t, int f) {
+	if (v == t) {
+		return f;
+	}
+	for (int i = iter[v]; i < G[v].size(); i++) {
+		edge& e = G[v][i];
+		if (e.cap > 0 && level[v] < level[e.to]) {
+			int d = dfs(e.to, t, min(f, e.cap));
+			if (d > 0) {
+				e.cap -= d;
+				G[e.to][e.rev].cap += d;
+				return d;
+			}
+		}
+	}
+	return 0;
+}
+
+int max_flow(int s, int t) {
+	int flow = 0;
+	for (;;) {
+		bfs(s);
+		if (level[t] < 0)return flow;
+		reset(iter, 0, Total_V);
+		int f;
+		while ((f = dfs(s, t, INF)) > 0) {
+			flow += f;
+		}
+	}
+	return flow;
+}
+
+void reset(int arr[], int value, int size) {
+	for (int i = 0; i < size; i++) {
+		arr[i] = value;
+	}
+}
